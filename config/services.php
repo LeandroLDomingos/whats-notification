@@ -38,6 +38,7 @@ return [
     'whatsapp' => [
         'url' => env('WHATSAPP_URL'),
         'instance' => env('WHATSAPP_INSTANCE'),
+        'apikey' => env('WHATSAPP_API_KEY'),
     ],
 
 ];
