@@ -1,25 +1,15 @@
-<script setup lang="ts">
-import InputError from '@/components/InputError.vue';
-import TextLink from '@/components/TextLink.vue';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AuthBase from '@/layouts/AuthLayout.vue';
+<script setup>
 import { Head, useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
 
-defineProps<{
-    status?: string;
-    canResetPassword: boolean;
-}>();
-
+// O useForm do Inertia ajuda a gerir os dados do formulário,
+// validação de erros e o estado de envio.
 const form = useForm({
-    email: '',
-    password: '',
-    remember: false,
+    email: '', // Preenchido para facilitar o teste
+    password: '',   // Preenchido para facilitar o teste
+    remember: true
 });
 
+// Função para submeter o formulário de login
 const submit = () => {
     form.post(route('login'), {
         onFinish: () => form.reset('password'),
@@ -28,66 +18,58 @@ const submit = () => {
 </script>
 
 <template>
-    <AuthBase title="Log in to your account" description="Enter your email and password below to log in">
-        <Head title="Log in" />
+    <Head title="Login" />
 
-        <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
-            {{ status }}
+    <div class="font-sans bg-gray-900 text-white w-full h-screen overflow-hidden flex flex-col antialiased items-center justify-center p-8">
+        <div class="w-full max-w-xs">
+            <!-- Cabeçalho -->
+            <div class="text-center mb-10">
+                <h1 class="text-3xl font-bold text-cyan-400 mb-2">Whats Notificações
+                </h1>
+                <p class="text-gray-400">Gestão de clientes na palma da mão.</p>
+            </div>
+
+            <!-- Mensagem de erro de validação -->
+            <div v-if="form.errors.email" class="mb-4 p-3 bg-red-500/20 text-red-300 rounded-lg text-center">
+                {{ form.errors.email }}
+            </div>
+
+            <!-- Formulário -->
+            <form @submit.prevent="submit" class="space-y-6">
+                <!-- Campo de Email (sem label, com placeholder) -->
+                <div>
+                    <input 
+                        v-model="form.email" 
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-500" 
+                        id="email" 
+                        type="email" 
+                        placeholder="Email" 
+                        required 
+                    />
+                </div>
+                
+                <!-- Campo de Senha (sem label, com placeholder) -->
+                <div>
+                    <input 
+                        v-model="form.password" 
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-500" 
+                        id="password" 
+                        type="password" 
+                        placeholder="Senha" 
+                        required 
+                    />
+                </div>
+
+                <!-- Botão de Submissão -->
+                <div>
+                    <button 
+                        :disabled="form.processing" 
+                        class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-200 disabled:opacity-50"
+                    >
+                        Entrar
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <form @submit.prevent="submit" class="flex flex-col gap-6">
-            <div class="grid gap-6">
-                <div class="grid gap-2">
-                    <Label for="email">Email address</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        required
-                        autofocus
-                        :tabindex="1"
-                        autocomplete="email"
-                        v-model="form.email"
-                        placeholder="email@example.com"
-                    />
-                    <InputError :message="form.errors.email" />
-                </div>
-
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between">
-                        <Label for="password">Password</Label>
-                        <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm" :tabindex="5">
-                            Forgot password?
-                        </TextLink>
-                    </div>
-                    <Input
-                        id="password"
-                        type="password"
-                        required
-                        :tabindex="2"
-                        autocomplete="current-password"
-                        v-model="form.password"
-                        placeholder="Password"
-                    />
-                    <InputError :message="form.errors.password" />
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <Label for="remember" class="flex items-center space-x-3">
-                        <Checkbox id="remember" v-model="form.remember" :tabindex="3" />
-                        <span>Remember me</span>
-                    </Label>
-                </div>
-
-                <Button type="submit" class="mt-4 w-full" :tabindex="4" :disabled="form.processing">
-                    <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
-                    Log in
-                </Button>
-            </div>
-
-            <div class="text-center text-sm text-muted-foreground">
-                Don't have an account?
-                <TextLink :href="route('register')" :tabindex="5">Sign up</TextLink>
-            </div>
-        </form>
-    </AuthBase>
+    </div>
 </template>
