@@ -1,24 +1,26 @@
 <script setup>
 import CrmLayout from '@/layouts/CrmLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue'; // 1. Importar a função 'computed'
+import { computed } from 'vue';
 
+// Recebe a lista de contatos do controller para preencher o <select>
 const { contacts } = usePage().props;
 
+// Formulário do Inertia para gerenciar os dados e o estado
 const form = useForm({
   contact_id: null,
   total: '',
-  installments: '',
-  first_due_date: '',
+  number_of_installments: '', // Nome do campo atualizado
+  first_due_date: '',         // Campo de data atualizado
   notifications_per_installment: 1,
   notify_days_before: '',
   notify_days_before_secondary: '',
 });
 
-// 2. Criar a propriedade computada para o valor da parcela
+// Propriedade computada para calcular e formatar o valor da parcela
 const installmentValue = computed(() => {
   const total = parseFloat(form.total);
-  const installments = parseInt(form.installments, 10);
+  const installments = parseInt(form.number_of_installments, 10);
 
   if (total > 0 && installments > 0) {
     const value = total / installments;
@@ -29,7 +31,7 @@ const installmentValue = computed(() => {
   return '0,00';
 });
 
-
+// Função para submeter o formulário
 const store = () => {
   form.post(route('billings.store'));
 };
@@ -61,19 +63,19 @@ const store = () => {
 
             <div>
                 <div class="flex justify-between items-center mb-2">
-                    <label for="installments" class="text-sm font-medium text-gray-300">Parcelas</label>
-                    <span v-if="form.total > 0 && form.installments > 0" class="text-sm text-gray-400">
+                    <label for="number_of_installments" class="text-sm font-medium text-gray-300">Parcelas</label>
+                    <span v-if="form.total > 0 && form.number_of_installments > 0" class="text-sm text-gray-400">
                       R$ {{ installmentValue }} / parcela
                     </span>
                 </div>
-                <input v-model="form.installments" type="number" id="installments" class="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500" placeholder="Ex: 12" required>
-                <div v-if="form.errors.installments" class="text-red-500 text-sm mt-1">{{ form.errors.installments }}</div>
+                <input v-model="form.number_of_installments" type="number" id="number_of_installments" class="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500" placeholder="Ex: 12" required>
+                <div v-if="form.errors.number_of_installments" class="text-red-500 text-sm mt-1">{{ form.errors.number_of_installments }}</div>
             </div>
-
+            
             <div>
-                <label for="first_due_date" class="block mb-2 text-sm font-medium text-gray-300">Data do Primeiro Vencimento</label>
-                <input v-model="form.first_due_date" type="date" id="first_due_date" class="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500" required>
-                <div v-if="form.errors.first_due_date" class="text-red-500 text-sm mt-1">{{ form.errors.first_due_date }}</div>
+              <label for="first_due_date" class="block mb-2 text-sm font-medium text-gray-300">Data do Primeiro Vencimento</label>
+              <input v-model="form.first_due_date" type="date" id="first_due_date" class="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500" required>
+              <div v-if="form.errors.first_due_date" class="text-red-500 text-sm mt-1">{{ form.errors.first_due_date }}</div>
             </div>
 
             <div>

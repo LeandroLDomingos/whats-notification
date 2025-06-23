@@ -1,17 +1,17 @@
 <script setup>
 import CrmLayout from '@/layouts/CrmLayout.vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
-import { Button } from '@/components/ui/button';
+import { CheckCircle, Circle } from 'lucide-vue-next'; // Ícones para o status
 
-const { billing, installments_details } = usePage().props;
+// Props recebidas do BillingController
+const { billing } = usePage().props;
 
-const markAsPaid = () => {
-    if (confirm('Deseja marcar esta cobrança como totalmente paga?')) {
-        router.patch(route('billings.markAsPaid', billing.id), {
-            preserveScroll: true,
-        });
-    }
-}
+// Função para alterar o status de uma parcela
+const toggleInstallmentStatus = (installmentId) => {
+    router.patch(route('installments.toggleStatus', installmentId), {}, {
+        preserveScroll: true, // Mantém a posição da página após a atualização
+    });
+};
 </script>
 
 <template>
@@ -33,21 +33,17 @@ const markAsPaid = () => {
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-6 text-sm">
                     <div>
                         <p class="text-gray-400">Valor Total</p>
-                        <p class="font-bold text-lg">R$ {{ billing.total_formatted }}</p>
+                        <p class="font-bold text-lg">R$ {{ (billing.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</p>
                     </div>
                     <div>
                         <p class="text-gray-400">Parcelas</p>
-                        <p class="font-bold text-lg">{{ billing.installments }}x de R$ {{ installments_details[0]?.value || '0,00' }}</p>
+                        <p class="font-bold text-lg">{{ billing.number_of_installments }}x</p>
                     </div>
-                    <div>
-                        <p class="text-gray-400">Status</p>
-                        <p class="font-bold text-lg capitalize" :class="billing.status === 'paid' ? 'text-green-400' : 'text-yellow-400'">{{ billing.status === 'paid' ? 'Paga' : 'Pendente' }}</p>
+                     <div>
+                        <p class="text-gray-400">1º Vencimento</p>
+                        <p class="font-bold text-lg">{{ new Date(billing.first_due_date).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) }}</p>
                     </div>
-                    <div>
-                        <p class="text-gray-400">Dia do Vencimento</p>
-                        <p class="font-bold">Todo dia {{ billing.due_day }}</p>
-                    </div>
-                    <div class="col-span-2 md:col-span-1">
+                    <div class="col-span-2 md:col-span-2">
                         <p class="text-gray-400">Notificações</p>
                         <p class="font-bold">
                             {{ billing.notifications_per_installment }}x por parcela,
@@ -59,11 +55,6 @@ const markAsPaid = () => {
                         </p>
                     </div>
                 </div>
-                <div class="mt-6 pt-4 border-t border-gray-700 flex justify-end" v-if="billing.status !== 'paid'">
-                    <Button @click="markAsPaid" class="bg-green-600 hover:bg-green-700">
-                        Marcar Dívida como Paga
-                    </Button>
-                </div>
             </div>
 
             <div class="bg-gray-800 rounded-lg shadow overflow-x-auto">
@@ -71,16 +62,32 @@ const markAsPaid = () => {
                 <table class="w-full whitespace-nowrap">
                     <thead class="text-left font-bold">
                         <tr>
+                            <th class="px-6 pb-4">Status</th>
                             <th class="px-6 pb-4">Nº Parcela</th>
                             <th class="px-6 pb-4">Valor (R$)</th>
-                            <th class="px-6 pb-4">Data Vencimento</th>
+                            <th class="px-6 pb-4">Vencimento</th>
+                            <th class="px-6 pb-4">Pago em</th>
+                            <th class="px-6 pb-4">Ação</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="installment in installments_details" :key="installment.number" class="hover:bg-gray-700">
-                            <td class="border-t border-gray-700 px-6 py-4">{{ installment.number }} de {{ billing.installments }}</td>
-                            <td class="border-t border-gray-700 px-6 py-4">{{ installment.value }}</td>
-                            <td class="border-t border-gray-700 px-6 py-4">{{ installment.due_date }}</td>
+                        <tr v-for="installment in billing.installments" :key="installment.id" class="hover:bg-gray-700">
+                            <td class="border-t border-gray-700 px-6 py-4">
+                                <span :class="installment.status === 'paid' ? 'text-green-400' : 'text-yellow-400'" class="flex items-center gap-2 text-sm font-semibold">
+                                    <CheckCircle v-if="installment.status === 'paid'" class="w-4 h-4" />
+                                    <Circle v-else class="w-4 h-4" />
+                                    {{ installment.status === 'paid' ? 'Paga' : 'Pendente' }}
+                                </span>
+                            </td>
+                            <td class="border-t border-gray-700 px-6 py-4">{{ installment.installment_number }} de {{ billing.number_of_installments }}</td>
+                            <td class="border-t border-gray-700 px-6 py-4">{{ (installment.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</td>
+                            <td class="border-t border-gray-700 px-6 py-4">{{ new Date(installment.due_date).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) }}</td>
+                            <td class="border-t border-gray-700 px-6 py-4">{{ installment.paid_at ? new Date(installment.paid_at).toLocaleString('pt-BR', {timeZone: 'UTC'}) : '-' }}</td>
+                            <td class="border-t border-gray-700 px-6 py-4">
+                                <button @click="toggleInstallmentStatus(installment.id)" class="text-cyan-400 hover:underline text-sm font-semibold">
+                                    {{ installment.status === 'paid' ? 'Marcar como pendente' : 'Marcar como paga' }}
+                                </button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

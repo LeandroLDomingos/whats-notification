@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\MessageController;
 use App\Models\User;
 use App\Notifications\WhatsappNotification;
@@ -27,7 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Novas rotas para as seções do app
     Route::resource('contacts', ContactController::class)->except(['show']);
     Route::resource('billings', BillingController::class);
-    Route::patch('/billings/{billing}/mark-as-paid', [BillingController::class, 'markAsPaid'])->name('billings.markAsPaid');
+    Route::patch('/installments/{installment}/toggle-status', [InstallmentController::class, 'toggleStatus'])->name('installments.toggleStatus');
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
 });
 
