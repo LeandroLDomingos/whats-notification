@@ -26,7 +26,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Novas rotas para as seções do app
     Route::resource('contacts', ContactController::class)->except(['show']);
-    Route::get('/billings', [BillingController::class, 'index'])->name('billings.index');
+    Route::resource('billings', BillingController::class);
+    Route::patch('/billings/{billing}/mark-as-paid', [BillingController::class, 'markAsPaid'])->name('billings.markAsPaid');
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
 });
 
