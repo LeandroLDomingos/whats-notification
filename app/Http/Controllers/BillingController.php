@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
-use Carbon\Carbon;
+use App\Jobs\SendWhatsappNotification;
 
 class BillingController extends Controller
 {
@@ -20,16 +20,16 @@ class BillingController extends Controller
         $billings = Billing::whereHas('installments', function ($query) {
             $query->where('status', 'unpaid');
         })
-        ->with('contact')
-        ->latest()
-        ->get()
-        ->map(fn ($billing) => [
-            'id' => $billing->id,
-            'contact_name' => $billing->contact->name,
-            'total' => number_format($billing->total, 2, ',', '.'),
-            'installments' => $billing->number_of_installments,
-            'first_due_date' => $billing->first_due_date->format('d/m/Y'),
-        ]);
+            ->with('contact')
+            ->latest()
+            ->get()
+            ->map(fn($billing) => [
+                'id' => $billing->id,
+                'contact_name' => $billing->contact->name,
+                'total' => number_format($billing->total, 2, ',', '.'),
+                'installments' => $billing->number_of_installments,
+                'first_due_date' => $billing->first_due_date->format('d/m/Y'),
+            ]);
 
         return Inertia::render('Billings/Index', ['billings' => $billings]);
     }
@@ -106,7 +106,7 @@ class BillingController extends Controller
 
         DB::transaction(function () use ($validated, $billing) {
             $billing->update($validated);
-            
+
             // Apaga as parcelas antigas e recria com os novos dados
             $billing->installments()->delete();
             $this->createInstallmentsForBilling($billing->fresh());
@@ -129,15 +129,40 @@ class BillingController extends Controller
      */
     private function createInstallmentsForBilling(Billing $billing)
     {
-        $installmentValue = $billing->total / $billing->number_of_installments;
+        $contact = $billing->contact;
+        $installmentValue = number_format($billing->total / $billing->number_of_installments, 2, ',', '.');
 
         for ($i = 0; $i < $billing->number_of_installments; $i++) {
-            $billing->installments()->create([
+            $dueDate = $billing->first_due_date->copy()->addMonthsNoOverflow($i);
+
+            $installment = $billing->installments()->create([
                 'installment_number' => $i + 1,
-                'value' => $installmentValue,
-                'due_date' => $billing->first_due_date->copy()->addMonthsNoOverflow($i),
+                'value' => $billing->total / $billing->number_of_installments,
+                'due_date' => $dueDate,
                 'status' => 'unpaid',
             ]);
+
+            // --- Lógica de Agendamento de Jobs ---
+
+            // 1. Calcula a DATA em que a notificação deve ser enviada
+            $notificationDate = $dueDate->copy()->subDays($billing->notify_days_before);
+
+            // 2. Pega a HORA atual e adiciona 10 minutos
+            $notificationTime = now()->addMinutes(1);
+
+            // 3. Combina a DATA futura com a HORA desejada
+            $finalDispatchDateTime = $notificationDate->setTime(
+                $notificationTime->hour,
+                $notificationTime->minute,
+                $notificationTime->second
+            );
+
+            $message = "Olá {$contact->name}. Lembrete da sua parcela nº {$installment->installment_number} no valor de R$ {$installmentValue}, que vence em {$dueDate->format('d/m/Y')}.";
+
+            // 4. Agenda o job para a data e hora combinadas, se for no futuro
+            if ($finalDispatchDateTime->isFuture()) {
+                SendWhatsappNotification::dispatch($contact, $message)->delay($finalDispatchDateTime);
+            }
         }
     }
 }
