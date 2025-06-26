@@ -14,18 +14,19 @@ WORKDIR /var/www/html
 # Instalação de dependências do sistema e um conjunto completo de extensões PHP
 RUN apk add --no-cache $PHPIZE_DEPS \
     && apk add --no-cache \
-        nginx \
-        supervisor \
-        curl \
-        libzip-dev \
-        zip \
-        unzip \
-        libpng-dev \
-        libjpeg-turbo-dev \
-        freetype-dev \
-        libxml2-dev \
-        oniguruma-dev \
-        icu-dev \
+    nginx \
+    supervisor \
+    curl \
+    libzip-dev \
+    zip \
+    unzip \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    libxml2-dev \
+    oniguruma-dev \
+    icu-dev \
+    linux-headers \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql zip bcmath pcntl sockets exif mbstring soap \
     && apk del $PHPIZE_DEPS
