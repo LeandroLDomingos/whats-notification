@@ -18,12 +18,9 @@ RUN apk add --no-cache \
       libzip-dev \
       zip \
       oniguruma-dev \
-      # ===== CORREÇÃO AQUI =====
-      # Adicionadas dependências para a extensão GD (libpng, libjpeg, freetype)
       libpng-dev \
       libjpeg-turbo-dev \
       freetype-dev \
-      # =========================
       && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Copia o Composer.
@@ -36,11 +33,17 @@ COPY docker/supervisord.conf /etc/supervisord.conf
 # Copia todo o código do projeto.
 COPY . .
 
-# Copia os assets compilados do estágio 'node_assets'.
-COPY --from=node_assets /app/public ./public
+# ===== CORREÇÃO FINAL AQUI =====
+# Copia APENAS a pasta 'build' de dentro da 'public' do estágio anterior.
+# Isso preserva o nosso index.php e outros assets.
+COPY --from=node_assets /app/public/build ./public/build
+# ===============================
 
 # Instala as dependências do Composer.
 RUN composer install --no-dev --optimize-autoloader
+
+# Limpa os caches do Laravel para garantir que ele use as novas configurações em produção.
+RUN php artisan config:clear && php artisan route:clear && php artisan view:clear
 
 # Ajusta as permissões das pastas.
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
