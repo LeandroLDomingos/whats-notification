@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Notifications\Notifiable;
 
 class Contact extends Model
@@ -19,5 +21,21 @@ class Contact extends Model
     public function routeNotificationForWhatsapp($notification)
     {
         return $this->phone;
+    }
+
+        /**
+     * Relacionamento para todas as mensagens agendadas de um contato.
+     */
+    public function scheduledMessages(): HasMany
+    {
+        return $this->hasMany(ScheduledMessage::class);
+    }
+
+    /**
+     * Relacionamento para obter apenas a mensagem mais recente de um contato.
+     */
+    public function latestMessage(): HasOne
+    {
+        return $this->hasOne(ScheduledMessage::class)->latestOfMany('scheduled_for');
     }
 }
