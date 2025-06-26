@@ -14,19 +14,19 @@ WORKDIR /var/www/html
 # Instalação de dependências do sistema e um conjunto completo de extensões PHP
 RUN apk add --no-cache $PHPIZE_DEPS \
     && apk add --no-cache \
-        nginx \
-        supervisor \
-        curl \
-        libzip-dev \
-        zip \
-        unzip \
-        libpng-dev \
-        libjpeg-turbo-dev \
-        freetype-dev \
-        libxml2-dev \
-        oniguruma-dev \
-        icu-dev \
-        linux-headers \
+    nginx \
+    supervisor \
+    curl \
+    libzip-dev \
+    zip \
+    unzip \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    libxml2-dev \
+    oniguruma-dev \
+    icu-dev \
+    linux-headers \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql zip bcmath pcntl sockets exif mbstring soap \
     && apk del $PHPIZE_DEPS
@@ -38,11 +38,15 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY composer.json composer.lock ./
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts
 
-# Copia o resto dos arquivos da aplicação
+# Copia o resto dos arquivos da aplicação (incluindo o 'artisan')
 COPY . .
 
-# Gera o autoload, que é seguro de se fazer no build
-RUN composer dump-autoload --optimize --no-dev
+# Agora que 'artisan' existe, execute os scripts do composer e as otimizações
+RUN composer dump-autoload --optimize --no-dev \
+    && php artisan optimize:clear \
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
 
 # Configuração do Nginx e Supervisor
 COPY docker/nginx.conf /etc/nginx/nginx.conf
@@ -57,5 +61,4 @@ RUN chown -R www-data:www-data /var/www/html \
 
 EXPOSE 80
 
-# O comando final agora é apenas iniciar o supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
