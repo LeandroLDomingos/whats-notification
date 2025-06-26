@@ -10,7 +10,7 @@ RUN npm run build
 FROM php:8.3-fpm-alpine
 WORKDIR /var/www/html
 
-# Instala as extensões PHP necessárias para o Laravel e o Composer.
+# Instala as extensões PHP e dependências do sistema
 RUN apk add --no-cache \
       build-base \
       nginx \
@@ -18,12 +18,18 @@ RUN apk add --no-cache \
       libzip-dev \
       zip \
       oniguruma-dev \
+      # ===== CORREÇÃO AQUI =====
+      # Adicionadas dependências para a extensão GD (libpng, libjpeg, freetype)
+      libpng-dev \
+      libjpeg-turbo-dev \
+      freetype-dev \
+      # =========================
       && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Copia o Composer.
 COPY --from=composer/composer:latest-bin /composer /usr/bin/composer
 
-# Copia os arquivos de configuração do Nginx e Supervisor.
+# Copia os arquivos de configuração.
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
 
@@ -40,19 +46,12 @@ RUN composer install --no-dev --optimize-autoloader
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# ================== ALTERAÇÕES AQUI ==================
-
-# 1. Copia nosso novo script de entrypoint para dentro da imagem.
+# Copia e dá permissão ao script de entrypoint.
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-
-# 2. Dá permissão de execução para o script.
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Expõe a porta 80 para o tráfego web.
+# Expõe a porta 80.
 EXPOSE 80
 
-# 3. Define nosso script como o ponto de entrada. Ele rodará as migrations e depois o CMD.
+# Define o script como ponto de entrada.
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-
-# O comando CMD original foi movido para dentro do entrypoint.sh
-# ================== FIM DAS ALTERAÇÕES ==================
