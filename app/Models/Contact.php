@@ -10,10 +10,20 @@ use Illuminate\Notifications\Notifiable;
 
 class Contact extends Model
 {
-    use HasFactory, Notifiable; 
+    use HasFactory, Notifiable;
 
     protected $fillable = ['name', 'email', 'phone'];
 
+    /**
+     * Define o relacionamento onde um Contato PODE TER MUITAS Cobranças.
+     * ESTE É O MÉTODO QUE ESTAVA FALTANDO.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function billings(): HasMany
+    {
+        return $this->hasMany(Billing::class);
+    }
     /**
      * Define para qual número de telefone as notificações do WhatsApp devem ser enviadas.
      * O número deve estar no formato internacional, ex: 5531999998888.
@@ -23,7 +33,7 @@ class Contact extends Model
         return $this->phone;
     }
 
-        /**
+    /**
      * Relacionamento para todas as mensagens agendadas de um contato.
      */
     public function scheduledMessages(): HasMany

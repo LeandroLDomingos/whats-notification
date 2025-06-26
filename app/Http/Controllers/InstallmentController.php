@@ -3,25 +3,31 @@
 namespace App\Http\Controllers;
 
 use App\Models\Installment;
-use App\Models\ScheduledMessage; // Importar o model
+use App\Models\ScheduledMessage;
 use Carbon\Carbon;
-use Redirect;
+use Illuminate\Http\Request; 
+use Redirect;// 1. Importar a classe Request
 
 class InstallmentController extends Controller
 {
-    public function toggleStatus(Installment $installment)
+    // 2. Adicionar Request ao método e validar a data
+    public function toggleStatus(Request $request, Installment $installment)
     {
         // Se a parcela está sendo marcada como PAGA
         if ($installment->status !== 'paid') {
-            $installment->update([
-                'status' => 'paid',
-                'paid_at' => now(),
+            $validated = $request->validate([
+                'paid_at' => 'required|date',
             ]);
 
-            // Encontra todas as mensagens PENDENTES para esta parcela e as CANCELA.
+            $installment->update([
+                'status' => 'paid',
+                'paid_at' => Carbon::parse($validated['paid_at']), // Usa a data do formulário
+            ]);
+
+            // Cancela as mensagens pendentes para esta parcela
             ScheduledMessage::where('installment_id', $installment->id)
                             ->where('status', 'pending')
-                            ->update(['status' => 'paid']);
+                            ->update(['status' => 'cancelled']);
         
         // Se a parcela está sendo revertida para PENDENTE
         } else {
@@ -29,8 +35,6 @@ class InstallmentController extends Controller
                 'status' => 'unpaid',
                 'paid_at' => null,
             ]);
-            // Opcional: Você poderia recriar os jobs aqui se quisesse.
-            // Por enquanto, apenas revertemos o status da parcela.
         }
 
         return Redirect::route('billings.index')->with('success', 'Status da parcela alterado com sucesso!');

@@ -204,4 +204,19 @@ class BillingController extends Controller
             }
         }
     }
+    
+    public function history()
+    {
+        $paidBillings = Billing::whereDoesntHave('installments', function ($query) {
+            $query->where('status', 'unpaid');
+        })
+            ->with('contact')
+            ->latest('updated_at')
+            ->paginate(15);
+
+        return Inertia::render('Billings/History', [
+            'billings' => $paidBillings,
+        ]);
+    }
+
 }

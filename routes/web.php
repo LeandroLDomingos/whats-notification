@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ScheduledMessageController;
@@ -24,15 +25,18 @@ Route::get('teste', function () {
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', fn() => Inertia::render('Dashboard'))->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Novas rotas para as seções do app
     Route::resource('contacts', ContactController::class)->except(['show']);
-    Route::resource('billings', BillingController::class);
+    Route::get('/billings/history', [App\Http\Controllers\BillingController::class, 'history'])->name('billings.history');
+
+    Route::resource('billings', App\Http\Controllers\BillingController::class);
     Route::patch('/installments/{installment}/toggle-status', [InstallmentController::class, 'toggleStatus'])->name('installments.toggleStatus');
     Route::resource('messages', MessageController::class)->only(['index', 'show']);
     Route::post('/messages/{scheduledMessage}/send-now', [ScheduledMessageController::class, 'sendNow'])
         ->name('messages.sendNow');
+
 });
 
 require __DIR__ . '/settings.php';
