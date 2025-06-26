@@ -6,7 +6,7 @@ RUN yarn install
 COPY . .
 RUN yarn build
 
-# Estágio 2: Build da aplicação PHP
+# Estágio 2: Build da aplicação PHP para Produção
 FROM php:8.2-fpm-alpine
 
 WORKDIR /var/www/html
@@ -30,20 +30,27 @@ RUN apk add --no-cache $PHPIZE_DEPS \
 # Instalação do Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Cópia dos arquivos da aplicação
-COPY --from=assets /app/vendor /var/www/html/vendor
-COPY --from=assets /app /var/www/html
+# Copia os arquivos do composer e instala as dependências de produção
+# Isso otimiza o cache do Docker, pois as dependências só são reinstaladas se o composer.lock mudar
+COPY composer.json composer.lock ./
+RUN composer install --no-interaction --optimize-autoloader --no-dev
+
+# Copia o resto dos arquivos da aplicação
+COPY . .
 
 # Configuração do Nginx e Supervisor
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Cópia dos assets compilados
+# Cópia dos assets compilados do estágio anterior
 COPY --from=assets /app/public /var/www/html/public
 
-# Permissões
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+# Otimizações e permissões do Laravel para produção
+RUN php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80
 
