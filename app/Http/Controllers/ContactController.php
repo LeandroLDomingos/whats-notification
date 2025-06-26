@@ -9,17 +9,29 @@ use Illuminate\Support\Facades\Redirect;
 
 class ContactController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('Contacts/Index', [
-            'contacts' => Contact::all()->map(function ($contact) {
-                return [
-                    'id' => $contact->id,
-                    'name' => $contact->name,
-                    'email' => $contact->email,
-                    'phone' => $contact->phone,
-                ];
+        $filters = $request->only('search');
+        
+        $contacts = Contact::query()
+            ->when($request->input('search'), function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%");
             })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString() // Mantém a query string na paginação
+            ->through(fn ($contact) => [
+                'id' => $contact->id,
+                'name' => $contact->name,
+                'email' => $contact->email,
+                'phone' => $contact->phone,
+            ]);
+
+        return Inertia::render('Contacts/Index', [
+            'contacts' => $contacts,
+            'filters' => $filters, // Envia o termo de busca de volta para a view
         ]);
     }
 

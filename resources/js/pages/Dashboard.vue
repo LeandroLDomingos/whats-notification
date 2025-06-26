@@ -3,6 +3,7 @@ import CrmLayout from '@/layouts/CrmLayout.vue';
 import { Head, usePage, Link } from '@inertiajs/vue3';
 import { DollarSign, Users, TrendingUp, Calendar, History } from 'lucide-vue-next';
 
+// A prop stats agora incluirá total_clients
 const { stats, upcoming_installments } = usePage().props;
 </script>
 
@@ -10,8 +11,8 @@ const { stats, upcoming_installments } = usePage().props;
   <CrmLayout title="Dashboard">
     <Head title="Dashboard" />
     <div class="space-y-6">
-      <!-- Cartões de Estatísticas -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Cartões de Estatísticas - grid ajustado para até 4 colunas -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Total a Receber -->
         <div class="bg-gray-800 p-6 rounded-lg flex items-center gap-4">
           <div class="p-3 rounded-full bg-green-500/20">
@@ -40,6 +41,16 @@ const { stats, upcoming_installments } = usePage().props;
           <div>
             <p class="text-sm text-gray-400">Clientes Ativos</p>
             <p class="text-2xl font-bold">{{ stats.active_clients }}</p>
+          </div>
+        </div>
+        <!-- NOVO CARD: Total de Clientes -->
+        <div class="bg-gray-800 p-6 rounded-lg flex items-center gap-4">
+          <div class="p-3 rounded-full bg-purple-500/20">
+            <Users class="w-6 h-6 text-purple-400" />
+          </div>
+          <div>
+            <p class="text-sm text-gray-400">Total de Clientes</p>
+            <p class="text-2xl font-bold">{{ stats.total_clients }}</p>
           </div>
         </div>
       </div>

@@ -24,6 +24,9 @@ class DashboardController extends Controller
         $activeClientsCount = Contact::whereHas('billings.installments', function ($query) {
             $query->where('status', 'unpaid');
         })->count();
+        
+        // NOVO: Contagem total de clientes
+        $totalClientsCount = Contact::count();
 
         // 4. Próximas 5 parcelas a vencer
         $upcomingInstallments = Installment::with('billing.contact')
@@ -44,6 +47,7 @@ class DashboardController extends Controller
                 'total_receivable' => number_format($totalReceivable, 2, ',', '.'),
                 'monthly_revenue' => number_format($monthlyRevenue, 2, ',', '.'),
                 'active_clients' => $activeClientsCount,
+                'total_clients' => $totalClientsCount, // Envia a nova estatística para a view
             ],
             'upcoming_installments' => $upcomingInstallments,
         ]);
@@ -69,7 +73,7 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard/MonthlyRevenueReport', [
             'paid_installments' => $paidInstallments,
-            'current_month_name' => now()->translatedFormat('F'), // Ex: "Junho"
+            'current_month_name' => now()->translatedFormat('F'),
         ]);
     }
 }
