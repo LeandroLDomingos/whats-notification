@@ -22,7 +22,7 @@ const page = usePage();
                 <h1 class="text-xl font-bold text-white">{{ page.props.title || 'Dashboard' }}</h1>
                 
                 <!-- O botão de logout -->
-                <Link v-if="page.props.auth.user" :href="route('logout')" method="post" as="button" class="text-gray-300 p-2 rounded-full hover:bg-gray-700">
+                <Link v-if="page.props.auth.user" :href="route('logout')" method="post" as="button" class="text-red-600 p-2 rounded-full hover:bg-gray-700">
                     <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                 </Link>
             </header>
