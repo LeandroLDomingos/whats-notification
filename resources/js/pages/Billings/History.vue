@@ -4,6 +4,13 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
 
 const { billings } = usePage().props;
+
+/**
+ * Função que utiliza a API de histórico do navegador para voltar à página anterior.
+ */
+const goBack = () => {
+  window.history.back();
+};
 </script>
 
 <template>
@@ -12,10 +19,13 @@ const { billings } = usePage().props;
     <div class="px-4 py-4">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-xl md:text-2xl font-bold">Cobranças Quitadas</h1>
-        <Link :href="route('billings.index')" class="flex items-center gap-2 text-cyan-400 hover:underline">
+        
+        <!-- BOTÃO CORRIGIDO -->
+        <button @click="goBack" class="flex items-center gap-2 text-cyan-400 hover:underline font-semibold">
           <ArrowLeft class="w-4 h-4" />
-          Voltar para Pendentes
-        </Link>
+          Voltar
+        </button>
+
       </div>
        <div class="bg-gray-800 rounded-lg shadow overflow-x-auto">
         <table class="w-full whitespace-nowrap text-sm">
@@ -42,7 +52,6 @@ const { billings } = usePage().props;
           </tbody>
         </table>
       </div>
-      <!-- Adicione paginação aqui se desejar -->
     </div>
   </CrmLayout>
 </template>

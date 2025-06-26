@@ -26,7 +26,7 @@ Route::get('teste', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
+    Route::get('/dashboard/monthly-revenue', [DashboardController::class, 'monthlyRevenueReport'])->name('dashboard.monthlyRevenue');
     // Novas rotas para as seções do app
     Route::resource('contacts', ContactController::class)->except(['show']);
     Route::get('/billings/history', [App\Http\Controllers\BillingController::class, 'history'])->name('billings.history');

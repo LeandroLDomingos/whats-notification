@@ -1,7 +1,7 @@
 <script setup>
 import CrmLayout from '@/layouts/CrmLayout.vue';
-import { Head, usePage } from '@inertiajs/vue3';
-import { DollarSign, Users, TrendingUp, Calendar } from 'lucide-vue-next';
+import { Head, usePage, Link } from '@inertiajs/vue3';
+import { DollarSign, Users, TrendingUp, Calendar, History } from 'lucide-vue-next';
 
 const { stats, upcoming_installments } = usePage().props;
 </script>
@@ -12,6 +12,7 @@ const { stats, upcoming_installments } = usePage().props;
     <div class="space-y-6">
       <!-- Cartões de Estatísticas -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Total a Receber -->
         <div class="bg-gray-800 p-6 rounded-lg flex items-center gap-4">
           <div class="p-3 rounded-full bg-green-500/20">
             <DollarSign class="w-6 h-6 text-green-400" />
@@ -21,7 +22,8 @@ const { stats, upcoming_installments } = usePage().props;
             <p class="text-2xl font-bold">R$ {{ stats.total_receivable }}</p>
           </div>
         </div>
-        <div class="bg-gray-800 p-6 rounded-lg flex items-center gap-4">
+        <!-- Receita do Mês (Clicável) -->
+        <Link :href="route('dashboard.monthlyRevenue')" class="bg-gray-800 p-6 rounded-lg flex items-center gap-4 hover:bg-gray-700/50 transition-colors duration-200">
           <div class="p-3 rounded-full bg-cyan-500/20">
             <TrendingUp class="w-6 h-6 text-cyan-400" />
           </div>
@@ -29,7 +31,8 @@ const { stats, upcoming_installments } = usePage().props;
             <p class="text-sm text-gray-400">Receita do Mês</p>
             <p class="text-2xl font-bold">R$ {{ stats.monthly_revenue }}</p>
           </div>
-        </div>
+        </Link>
+        <!-- Clientes Ativos -->
         <div class="bg-gray-800 p-6 rounded-lg flex items-center gap-4">
           <div class="p-3 rounded-full bg-yellow-500/20">
             <Users class="w-6 h-6 text-yellow-400" />
@@ -39,6 +42,19 @@ const { stats, upcoming_installments } = usePage().props;
             <p class="text-2xl font-bold">{{ stats.active_clients }}</p>
           </div>
         </div>
+      </div>
+
+      <!-- Ações Rápidas -->
+      <div class="grid grid-cols-1 gap-6">
+         <Link :href="route('billings.history')" class="bg-gray-800 p-4 rounded-lg flex items-center gap-4 hover:bg-gray-700/50 transition-colors duration-200">
+            <div class="p-3 rounded-full bg-indigo-500/20">
+                <History class="w-6 h-6 text-indigo-400" />
+            </div>
+            <div>
+                <p class="font-semibold">Histórico de Cobranças</p>
+                <p class="text-sm text-gray-400">Veja todas as cobranças que já foram quitadas</p>
+            </div>
+        </Link>
       </div>
 
       <!-- Próximos Vencimentos -->

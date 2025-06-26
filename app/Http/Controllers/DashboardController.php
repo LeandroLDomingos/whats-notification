@@ -48,4 +48,28 @@ class DashboardController extends Controller
             'upcoming_installments' => $upcomingInstallments,
         ]);
     }
+
+    /**
+     * Mostra um relatório detalhado do faturamento do mês corrente.
+     */
+    public function monthlyRevenueReport()
+    {
+        $paidInstallments = Installment::where('status', 'paid')
+            ->whereYear('paid_at', now()->year)
+            ->whereMonth('paid_at', now()->month)
+            ->with('billing.contact')
+            ->orderBy('paid_at', 'desc')
+            ->get()
+            ->map(fn ($installment) => [
+                'id' => $installment->id,
+                'contact_name' => $installment->billing->contact->name,
+                'value' => number_format($installment->value, 2, ',', '.'),
+                'paid_at' => Carbon::parse($installment->paid_at)->format('d/m/Y H:i'),
+            ]);
+
+        return Inertia::render('Dashboard/MonthlyRevenueReport', [
+            'paid_installments' => $paidInstallments,
+            'current_month_name' => now()->translatedFormat('F'), // Ex: "Junho"
+        ]);
+    }
 }
