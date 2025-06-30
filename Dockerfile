@@ -1,60 +1,38 @@
-# --- Estágio 1: Construir os Assets do Frontend (Node.js) ---
-FROM node:20 as node_assets
+# Estágio 1: Instalar dependências PHP
+FROM composer:2.7 as vendor
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
+COPY database/ database/
+COPY composer.json composer.lock ./
+RUN composer install --no-interaction --no-plugins --no-scripts --prefer-dist
+
+# Estágio 2: Construir assets do front-end
+FROM node:20-alpine as frontend
+WORKDIR /app
 COPY . .
+COPY --from=vendor /app/vendor/ /app/vendor/
+RUN npm install
 RUN npm run build
 
-# --- Estágio 2: Preparar a Aplicação Final (PHP + Nginx) ---
-FROM php:8.3-fpm-alpine
-WORKDIR /var/www/html
+# Estágio 3: Imagem final de produção
+# Usamos uma imagem base que já vem com Nginx e PHP-FPM, é otimizada e segura.
+FROM webdevops/php-nginx:8.3-alpine
 
-# Instala as extensões PHP e dependências do sistema
-RUN apk add --no-cache \
-      build-base \
-      nginx \
-      supervisor \
-      libzip-dev \
-      zip \
-      oniguruma-dev \
-      libpng-dev \
-      libjpeg-turbo-dev \
-      freetype-dev \
-      && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+# Copia somente os artefatos necessários dos estágios anteriores
+COPY --from=vendor /app/vendor/ /app/vendor/
+COPY --from=frontend /app/public/ /app/public/
+COPY . /app
 
-# Copia o Composer.
-COPY --from=composer/composer:latest-bin /composer /usr/bin/composer
+# Usa as configurações que você já tem, isso é ótimo!
+COPY docker/nginx.conf /opt/docker/etc/nginx/vhost.conf
+COPY docker/supervisord.conf /opt/docker/etc/supervisor.d/laravel.conf
 
-# Copia os arquivos de configuração.
-COPY docker/nginx.conf /etc/nginx/nginx.conf
-COPY docker/supervisord.conf /etc/supervisord.conf
+# Ajusta permissões
+RUN chown -R application:application /app/storage /app/bootstrap/cache
 
-# Copia todo o código do projeto.
-COPY . .
+WORKDIR /app
 
-# ===== CORREÇÃO FINAL AQUI =====
-# Copia APENAS a pasta 'build' de dentro da 'public' do estágio anterior.
-# Isso preserva o nosso index.php e outros assets.
-COPY --from=node_assets /app/public/build ./public/build
-# ===============================
-
-# Instala as dependências do Composer.
-RUN composer install --no-dev --optimize-autoloader
-
-# Limpa os caches do Laravel para garantir que ele use as novas configurações em produção.
-RUN php artisan config:clear && php artisan route:clear && php artisan view:clear
-
-# Ajusta as permissões das pastas.
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Copia e dá permissão ao script de entrypoint.
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Expõe a porta 80.
+# Expõe a porta 80 de dentro do contêiner, que o Nginx usará
 EXPOSE 80
 
-# Define o script como ponto de entrada.
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# Comando para iniciar Nginx e PHP-FPM gerenciados pelo Supervisor
+CMD ["/usr/local/bin/entrypoint.sh"]
