@@ -1,38 +1,53 @@
-# Estágio 1: Instalar dependências PHP
-FROM composer:2.7 as vendor
-WORKDIR /app
-COPY database/ database/
-COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-plugins --no-scripts --prefer-dist
+# Usa uma imagem base LTS do Ubuntu
+FROM ubuntu:22.04
 
-# Estágio 2: Construir assets do front-end
-FROM node:20-alpine as frontend
-WORKDIR /app
+# Evita perguntas interativas durante a instalação de pacotes
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instala pré-requisitos, Nginx, Supervisor, PHP 8.3 e AGORA TAMBÉM O NODE.JS
+RUN apt-get update && apt-get install -y \
+    software-properties-common curl git unzip zip ca-certificates \
+    nginx supervisor \
+    # Adiciona o repositório do PHP
+    && add-apt-repository ppa:ondrej/php -y \
+    # --- INÍCIO DA ADIÇÃO: INSTALAR NODE.JS ---
+    # Adiciona o repositório do Node.js (usaremos a versão 20.x, que é a LTS atual)
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    # --- FIM DA ADIÇÃO ---
+    && apt-get update \
+    && apt-get install -y \
+    # Instala o Node.js e o npm
+    nodejs \
+    # Instala o PHP e suas extensões
+    php8.3-fpm php8.3-mysql php8.3-mbstring \
+    php8.3-xml php8.3-gd php8.3-curl php8.3-zip php8.3-bcmath \
+    # Limpa o cache para manter a imagem menor
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Instala o Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Define o diretório de trabalho
+WORKDIR /var/www/html
+
+# Copia o código da sua aplicação Laravel
 COPY . .
-COPY --from=vendor /app/vendor/ /app/vendor/
-RUN npm install
-RUN npm run build
 
-# Estágio 3: Imagem final de produção
-# Usamos uma imagem base que já vem com Nginx e PHP-FPM, é otimizada e segura.
-FROM webdevops/php-nginx:8.3-alpine
+# Copia os arquivos de configuração
+COPY docker/nginx.conf /etc/nginx/sites-available/default
+COPY docker/supervisord.conf /etc/supervisor/conf.d/app.conf
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# Copia somente os artefatos necessários dos estágios anteriores
-COPY --from=vendor /app/vendor/ /app/vendor/
-COPY --from=frontend /app/public/ /app/public/
-COPY . /app
+# Remove a configuração padrão do Nginx e ativa a nossa
+RUN rm -f /etc/nginx/sites-enabled/default && \
+    ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default && \
+    chmod +x /usr/local/bin/entrypoint.sh
 
-# Usa as configurações que você já tem, isso é ótimo!
-COPY docker/nginx.conf /opt/docker/etc/nginx/vhost.conf
-COPY docker/supervisord.conf /opt/docker/etc/supervisor.d/laravel.conf
+# Ajusta permissões das pastas do Laravel
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Ajusta permissões
-RUN chown -R application:application /app/storage /app/bootstrap/cache
-
-WORKDIR /app
-
-# Expõe a porta 80 de dentro do contêiner, que o Nginx usará
+# Expõe a porta 80, que o Nginx usará
 EXPOSE 80
 
-# Comando para iniciar Nginx e PHP-FPM gerenciados pelo Supervisor
-CMD ["/usr/local/bin/entrypoint.sh"]
+# Define o entrypoint que iniciará tudo
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

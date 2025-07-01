@@ -1,55 +1,23 @@
-version: '3.8'
-
 services:
-  # -----------------------------------------------------------------
-  # Serviço da Aplicação Laravel
-  # -----------------------------------------------------------------
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: laravel_app
+    container_name: laravel_app_final
     restart: unless-stopped
+    ports:
+      # Expõe a aplicação na porta 8000
+      - "8000:80"
     volumes:
       - .:/var/www/html
-    ports:
-      # Expõe a porta 80 do contêiner na porta 8000 do seu computador.
-      # Você acessará a aplicação em http://localhost:8000
-      - "8000:80"
     networks:
-      - app_network
-    depends_on:
-      # Garante que a aplicação só inicie depois do banco de dados estar pronto.
-      - mariadb
+      # Conecta à sua rede principal já existente
+      - rede_geral_existente
+    env_file:
+      - .env
 
-  # -----------------------------------------------------------------
-  # Serviço do Banco de Dados (MariaDB)
-  # -----------------------------------------------------------------
-  mariadb:
-    image: mariadb:10.11 # Usando uma imagem oficial e estável do MariaDB
-    container_name: mariadb_db
-    restart: unless-stopped
-    environment:
-      # As variáveis de ambiente são as mesmas do MySQL para criar o DB automaticamente
-      MYSQL_DATABASE: '${DB_DATABASE}'
-      MYSQL_USER: '${DB_USERNAME}'
-      MYSQL_PASSWORD: '${DB_PASSWORD}'
-      MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
-    volumes:
-      - db_data:/var/lib/mysql
-    ports:
-      # Opcional: expor a porta para conectar com um cliente de DB (DBeaver, TablePlus)
-      - "3307:3306"
-    networks:
-      - app_network
-
-# -----------------------------------------------------------------
-# Configurações Globais de Rede e Volumes
-# -----------------------------------------------------------------
 networks:
-  app_network:
-    driver: bridge
-
-volumes:
-  db_data:
-    driver: local
+  rede_geral_existente:
+    external: true
+    # Garanta que este é o nome exato da sua rede externa
+    name: rede_dados_geral
