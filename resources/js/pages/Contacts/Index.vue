@@ -1,7 +1,7 @@
 <script setup>
 import CrmLayout from '@/layouts/CrmLayout.vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue'; // 1. 'computed' foi importado.
 import { debounce } from 'lodash';
 import { Search } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
@@ -15,20 +15,33 @@ import {
     DialogClose,
 } from '@/components/ui/dialog';
 
-// Recebe as props, incluindo os filtros de busca
-const { contacts, filters } = usePage().props;
+// --- INÍCIO DA CORREÇÃO ---
 
-// Cria uma referência reativa para o campo de busca
-const search = ref(filters.search || '');
+// 2. Obtemos a instância da página inteira, que é um objeto reativo.
+const page = usePage();
+
+// 3. Criamos 'contacts' e 'filters' como propriedades computadas.
+//    Isso garante que qualquer alteração nas props vindas do servidor (após busca, delete, etc.)
+//    seja refletida IMEDIATAMENTE na tela.
+const contacts = computed(() => page.props.contacts);
+const filters = computed(() => page.props.filters);
+
+// 4. A referência para a busca agora usa 'filters.value' para acessar o valor.
+const search = ref(filters.value.search || '');
+
+// --- FIM DA CORREÇÃO ---
 
 /**
  * Observa a variável 'search'. Quando ela muda, espera 300ms (debounce)
  * e depois faz uma nova requisição ao servidor com o novo termo de busca.
+ * Esta parte já estava correta e agora vai funcionar como esperado.
  */
 watch(search, debounce((value) => {
     router.get(route('contacts.index'), { search: value }, {
         preserveState: true,
+        preserveScroll: true,
         replace: true,
+        only: ['contacts', 'filters'],
     });
 }, 300));
 
@@ -40,7 +53,6 @@ const formatPhone = (phone) => {
   if (!phone) return '-';
   const numericPhone = phone.replace(/\D/g, '');
   
-  // Remove o '55' do Brasil se existir
   const numberWithoutCountryCode = numericPhone.startsWith('55') ? numericPhone.substring(2) : numericPhone;
 
   if (numberWithoutCountryCode.length === 11) {
@@ -49,11 +61,12 @@ const formatPhone = (phone) => {
   if (numberWithoutCountryCode.length === 10) {
     return `(${numberWithoutCountryCode.substring(0, 2)}) ${numberWithoutCountryCode.substring(2, 6)}-${numberWithoutCountryCode.substring(6)}`;
   }
-  return phone; // Retorna o original se não corresponder ao formato esperado
+  return phone;
 };
 
 
-// --- Lógica para exclusão ---
+// --- Lógica para exclusão (NÃO PRECISA DE MUDANÇA) ---
+// Com a reatividade das props corrigida, esta função já funcionará perfeitamente.
 const isConfirmingDelete = ref(false);
 const contactToDelete = ref(null);
 
@@ -79,7 +92,6 @@ const destroy = () => {
   <CrmLayout>
     <Head title="Contatos" />
     <div class="px-4 py-4 flex flex-col h-full">
-        <!-- Cabeçalho -->
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-xl md:text-2xl font-bold">Contatos</h1>
             <Link :href="route('contacts.create')" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg text-sm">
@@ -90,9 +102,7 @@ const destroy = () => {
             {{ $page.props.flash.success }}
         </div>
 
-        <!-- Conteúdo Principal -->
         <div class="flex-grow overflow-y-auto">
-            <!-- Tabela para Desktop -->
             <div class="hidden sm:block bg-gray-800 rounded-lg shadow overflow-x-auto">
                 <table class="w-full whitespace-nowrap text-sm">
                     <thead class="text-left font-bold bg-gray-700/50">
@@ -119,7 +129,6 @@ const destroy = () => {
                     </tbody>
                 </table>
             </div>
-            <!-- Lista de Cartões para Telemóvel -->
             <div class="block sm:hidden space-y-4">
                 <div v-if="!contacts.data || contacts.data.length === 0" class="p-4 text-center text-gray-500">
                     Nenhum contato encontrado.
@@ -140,7 +149,6 @@ const destroy = () => {
             </div>
         </div>
 
-        <!-- Campo de Busca na Parte de Baixo -->
         <div class="mt-4 flex-shrink-0">
             <div class="relative">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -156,8 +164,7 @@ const destroy = () => {
         </div>
     </div>
 
-     <!-- Modal de Confirmação de Exclusão -->
-    <Dialog v-model:open="isConfirmingDelete">
+     <Dialog v-model:open="isConfirmingDelete">
       <DialogContent class="sm:max-w-md bg-gray-800 border-gray-700 text-white">
         <DialogHeader>
           <DialogTitle class="text-lg font-bold">Confirmar Exclusão</DialogTitle>
