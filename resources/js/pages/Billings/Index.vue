@@ -13,7 +13,9 @@ import {
     DialogClose,
 } from '@/components/ui/dialog';
 
-const { billings } = usePage().props;
+// Pega os dados da página e cria cópia reativa
+const { billings: initialBillings } = usePage().props;
+const billings = ref([...initialBillings]);
 
 const isConfirmingDelete = ref(false);
 const billingToDelete = ref(null);
@@ -28,9 +30,12 @@ const destroy = () => {
         router.delete(route('billings.destroy', billingToDelete.value.id), {
             preserveScroll: true,
             onSuccess: () => {
+                billings.value = billings.value.filter(
+                    (b) => b.id !== billingToDelete.value.id
+                );
                 isConfirmingDelete.value = false;
                 billingToDelete.value = null;
-            }
+            },
         });
     }
 };
@@ -40,27 +45,23 @@ const destroy = () => {
   <CrmLayout>
     <Head title="Cobranças" />
     <div class="px-4 py-4">
-      <!-- CABEÇALHO CORRIGIDO -->
       <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-xl md:text-2xl font-bold">Cobranças Pendentes</h1>
-            <!-- Botão de histórico visível apenas em telas maiores -->
-            <Link :href="route('billings.history')" class="hidden sm:inline-block text-sm text-cyan-400 hover:underline mt-1">
-                Ver Histórico
-            </Link>
+          <h1 class="text-xl md:text-2xl font-bold">Cobranças Pendentes</h1>
+          <Link :href="route('billings.history')" class="hidden sm:inline-block text-sm text-cyan-400 hover:underline mt-1">
+            Ver Histórico
+          </Link>
         </div>
         <Link :href="route('billings.create')" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 text-sm whitespace-nowrap">
           Nova
         </Link>
       </div>
 
-      <!-- Link de histórico para telemóveis -->
-       <div class="sm:hidden mb-4">
-           <Link :href="route('billings.history')" class="text-sm text-cyan-400 hover:underline">
-                Ver cobranças quitadas
-            </Link>
-       </div>
-
+      <div class="sm:hidden mb-4">
+        <Link :href="route('billings.history')" class="text-sm text-cyan-400 hover:underline">
+          Ver cobranças quitadas
+        </Link>
+      </div>
 
       <div v-if="$page.props.flash.success" class="mb-4 p-3 bg-green-500/20 text-green-300 rounded-lg text-center text-sm">
         {{ $page.props.flash.success }}
@@ -79,7 +80,11 @@ const destroy = () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="billing in billings" :key="billing.id" class="border-b border-gray-700 hover:bg-gray-700/50">
+            <tr
+              v-for="billing in billings"
+              :key="billing.id"
+              class="border-b border-gray-700 hover:bg-gray-700/50"
+            >
               <td class="px-6 py-4 font-semibold">{{ billing.contact_name }}</td>
               <td class="px-6 py-4">{{ billing.total }}</td>
               <td class="px-6 py-4">{{ billing.installments }}x</td>
@@ -90,7 +95,7 @@ const destroy = () => {
                 <button @click="confirmDelete(billing)" class="text-red-500 hover:underline font-semibold">Excluir</button>
               </td>
             </tr>
-            <tr v-if="!billings || billings.length === 0">
+            <tr v-if="billings.length === 0">
               <td class="border-t border-gray-700 px-6 py-4 text-center" colspan="5">Nenhuma cobrança pendente encontrada.</td>
             </tr>
           </tbody>
@@ -99,22 +104,22 @@ const destroy = () => {
 
       <!-- Lista de Cartões para Telemóvel -->
       <div class="block sm:hidden space-y-4">
-         <div v-if="!billings || billings.length === 0" class="p-4 text-center text-gray-500">
-            Nenhuma cobrança pendente encontrada.
+        <div v-if="billings.length === 0" class="p-4 text-center text-gray-500">
+          Nenhuma cobrança pendente encontrada.
         </div>
         <div v-for="billing in billings" :key="billing.id" class="bg-gray-800 rounded-lg shadow p-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="font-bold text-base">{{ billing.contact_name }}</p>
-                    <p class="text-sm text-gray-300">Total: R$ {{ billing.total }}</p>
-                    <p class="text-xs text-gray-400">{{ billing.installments }}x | 1º Venc: {{ billing.first_due_date }}</p>
-                </div>
-                 <Link :href="route('billings.show', billing.id)" class="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs font-bold flex-shrink-0 ml-2">Ver Detalhes</Link>
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="font-bold text-base">{{ billing.contact_name }}</p>
+              <p class="text-sm text-gray-300">Total: R$ {{ billing.total }}</p>
+              <p class="text-xs text-gray-400">{{ billing.installments }}x | 1º Venc: {{ billing.first_due_date }}</p>
             </div>
-             <div class="mt-4 pt-4 border-t border-gray-700 flex justify-end gap-4 text-sm">
-                <Link :href="route('billings.edit', billing.id)" class="text-cyan-400 font-semibold">Editar</Link>
-                <button @click="confirmDelete(billing)" class="text-red-500 font-semibold">Excluir</button>
-            </div>
+            <Link :href="route('billings.show', billing.id)" class="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs font-bold flex-shrink-0 ml-2">Ver Detalhes</Link>
+          </div>
+          <div class="mt-4 pt-4 border-t border-gray-700 flex justify-end gap-4 text-sm">
+            <Link :href="route('billings.edit', billing.id)" class="text-cyan-400 font-semibold">Editar</Link>
+            <button @click="confirmDelete(billing)" class="text-red-500 font-semibold">Excluir</button>
+          </div>
         </div>
       </div>
     </div>
