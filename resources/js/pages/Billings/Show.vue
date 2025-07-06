@@ -53,10 +53,14 @@ const unpayInstallment = (installmentId) => {
                  <Link :href="route('billings.index')" class="mr-2 p-2 rounded-full hover:bg-gray-700">
                     <ArrowLeft class="w-5 h-5" />
                  </Link>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold">Detalhes da Cobrança</h1>
-                    <p class="text-sm text-gray-400">para {{ billing.contact?.name }}</p>
-                </div>
+                    <h1 class="text-2xl font-bold">
+                    Detalhes da Cobrança - {{ billing.contact.name }}
+                    </h1>
+
+                    <div class="mt-2 text-sm text-gray-300">
+                    <p><strong>Valor original:</strong> R$ {{ Number(billing.original_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</p>
+                    <p><strong>Valor com acréscimo (30%):</strong> R$ {{ Number(billing.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</p>
+                    </div>
             </div>
 
             <!-- Resumo da Cobrança -->

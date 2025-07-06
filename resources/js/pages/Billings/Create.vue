@@ -18,16 +18,15 @@ const form = useForm({
 });
 
 // Propriedade computada para calcular e formatar o valor da parcela
-const installmentValue = computed(() => {
-  const total = parseFloat(form.total);
-  const installments = parseInt(form.number_of_installments, 10);
+const baseTotal = computed(() => parseFloat(form.total) || 0);
+const totalWithInterest = computed(() => baseTotal.value * 1.3);
 
-  if (total > 0 && installments > 0) {
-    const value = total / installments;
-    // Formata o valor para o padrão monetário brasileiro (ex: 1.250,50)
+const installmentValue = computed(() => {
+  const installments = parseInt(form.number_of_installments, 10);
+  if (totalWithInterest.value > 0 && installments > 0) {
+    const value = totalWithInterest.value / installments;
     return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-
   return '0,00';
 });
 
@@ -54,13 +53,18 @@ const store = () => {
               </select>
               <div v-if="form.errors.contact_id" class="text-red-500 text-sm mt-1">{{ form.errors.contact_id }}</div>
             </div>
-
             <div>
-              <label for="total" class="block mb-2 text-sm font-medium text-gray-300">Total (R$)</label>
-              <input v-model="form.total" type="number" step="0.01" id="total" class="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500" placeholder="Ex: 1200.50" required>
-              <div v-if="form.errors.total" class="text-red-500 text-sm mt-1">{{ form.errors.total }}</div>
+              <label for="total" class="block mb-2 text-sm font-medium text-gray-300">Valor original (R$)</label>
+              <input
+                v-model="form.total"
+                id="total"
+                type="number"
+                step="0.01"
+                class="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 text-white"
+                required
+              />
             </div>
-
+            
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label for="number_of_installments" class="text-sm font-medium text-gray-300">Parcelas</label>
@@ -71,6 +75,22 @@ const store = () => {
                 <input v-model="form.number_of_installments" type="number" id="number_of_installments" class="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500" placeholder="Ex: 12" required>
                 <div v-if="form.errors.number_of_installments" class="text-red-500 text-sm mt-1">{{ form.errors.number_of_installments }}</div>
             </div>
+            <!-- Valor com acréscimo -->
+            <div>
+              <label class="block mb-2 text-sm font-medium text-gray-300">Valor com acréscimo (30%)</label>
+              <p class="text-white font-semibold">
+                R$ {{ totalWithInterest.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}
+              </p>
+            </div>
+
+            <!-- Valor estimado da parcela -->
+            <div>
+              <label class="block mb-2 text-sm font-medium text-gray-300">Valor estimado da parcela</label>
+              <p class="text-white font-semibold">
+                R$ {{ installmentValue }}
+              </p>
+            </div>
+
             
             <div>
               <label for="first_due_date" class="block mb-2 text-sm font-medium text-gray-300">Data do Primeiro Vencimento</label>

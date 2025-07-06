@@ -1,7 +1,15 @@
 <script setup>
 import CrmLayout from '@/layouts/CrmLayout.vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+
+const search = ref('');
+const filteredBillings = computed(() => {
+  if (!search.value) return billings.value;
+  return billings.value.filter((b) =>
+    b.contact_name.toLowerCase().includes(search.value.toLowerCase())
+  );
+});
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -45,6 +53,14 @@ const destroy = () => {
   <CrmLayout>
     <Head title="Cobranças" />
     <div class="px-4 py-4">
+      <div class="mb-6 max-w-md">
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Buscar por nome do contato..."
+          class="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+        />
+      </div>
       <div class="flex justify-between items-center mb-6">
         <div>
           <h1 class="text-xl md:text-2xl font-bold">Cobranças Pendentes</h1>
@@ -81,7 +97,7 @@ const destroy = () => {
           </thead>
           <tbody>
             <tr
-              v-for="billing in billings"
+              v-for="billing in filteredBillings"
               :key="billing.id"
               class="border-b border-gray-700 hover:bg-gray-700/50"
             >
@@ -107,7 +123,7 @@ const destroy = () => {
         <div v-if="billings.length === 0" class="p-4 text-center text-gray-500">
           Nenhuma cobrança pendente encontrada.
         </div>
-        <div v-for="billing in billings" :key="billing.id" class="bg-gray-800 rounded-lg shadow p-4">
+        <div v-for="billing in filteredBillings" :key="billing.id" class="bg-gray-800 rounded-lg shadow p-4">
           <div class="flex justify-between items-start">
             <div>
               <p class="font-bold text-base">{{ billing.contact_name }}</p>
