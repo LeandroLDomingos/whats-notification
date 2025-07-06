@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('scheduled_messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('contact_id')->constrained()->onDelete('cascade');
-            $table->foreignId('installment_id')->constrained()->onDelete('cascade');
+            $table->foreignId('installment_id')->nullable()->constrained()->onDelete('cascade');
             $table->text('message_body');
             $table->timestamp('scheduled_for');
             $table->string('status')->default('pending'); // Estados: pending, sent, failed

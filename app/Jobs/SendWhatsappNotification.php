@@ -27,6 +27,11 @@ class SendWhatsappNotification implements ShouldQueue
      */
     public function handle(): void
     {
+        // Verifica se a mensagem foi cancelada
+        if ($this->scheduledMessage->status === 'cancelled') {
+            return;
+        }
+
         // Se a mensagem foi cancelada antes do envio, o job para aqui.
         if ($this->scheduledMessage->status === 'paid') {
             return;

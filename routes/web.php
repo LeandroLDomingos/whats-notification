@@ -37,6 +37,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/messages/{scheduledMessage}/send-now', [ScheduledMessageController::class, 'sendNow'])
         ->name('messages.sendNow');
 
+    Route::post('/installments/{installment}/mark-paid', [InstallmentController::class, 'markAsPaid'])->name('installments.markPaid');
+
+
 });
 
 require __DIR__ . '/settings.php';
